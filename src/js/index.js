@@ -15,7 +15,7 @@ function GetSlideDirection(startX, startY, endX, endY) {
   var dy = endY - startY; 
   var dx = endX - startX;
   var dyRem = Math.floor(dy/46.875);
-  var dxRem = Math.floor(dx/46.875/4);
+  var dxRem = Math.floor(dx/46.875);
 
   var resultObj = {
     direction: 0,
@@ -270,7 +270,7 @@ function ClassicGame () {
         ]
     ];
     // 随机颜色
-    this.colors = ['#439e95', '#eda83f', '#226fb2', '#e23e34', '#85bc3c', '#8c2e89'];
+    this.colors = ['#037ef3', '#f85a40', '#30c39e', '#a51890', '#f48924', '#ffc845'];
 
     
     // 显示游戏区域所有网格
@@ -302,23 +302,47 @@ function ClassicGame () {
     //滑动处理 
     var startX, startY; 
     document.addEventListener('touchstart',function (ev) { 
-    startX = ev.touches[0].pageX; 
-    startY = ev.touches[0].pageY;   
+        startX = ev.touches[0].pageX; 
+        startY = ev.touches[0].pageY;
     }, false); 
 
-    document.addEventListener('touchend',function (ev) { 
+    document.addEventListener('touchmove',function (ev) { 
         var endX, endY; 
         endX = ev.changedTouches[0].pageX; 
-        endY = ev.changedTouches[0].pageY; 
+        endY = ev.changedTouches[0].pageY;
+
+        var dx = (endX - startX) / 46.875;
+        var dxRem = Math.floor(dx);
+        
         var resultObj = GetSlideDirection(startX, startY, endX, endY); 
-        if (resultObj.direction === 1 && resultObj.dyRem > 15) {
+        
+        if (Math.abs(dxRem) >= 1) {
+            
+            if (resultObj.direction === 3) {
+                startX = endX;
+                that.moveLeft(that, dxRem);
+                
+            } else if (resultObj.direction === 4) {
+                startX = endX;
+                that.moveRight(that, dxRem);
+            }
+        } else {
+            return;
+        }
+        
+        
+      }, false);
+
+      document.addEventListener('touchend',function (ev) { 
+        var endX, endY; 
+        endX = ev.changedTouches[0].pageX; 
+        endY = ev.changedTouches[0].pageY;
+        var resultObj = GetSlideDirection(startX, startY, endX, endY); 
+
+        if (resultObj.direction === 1 && resultObj.dyRem > 5) {
             that.moveDownFaster(that, 'touch');
-        } else if (resultObj.direction === 2) {
+        } else if (resultObj.direction === 2 && resultObj.dyRem < -2) {
             that.moveRotate(that);
-        } else if (resultObj.direction === 3) {
-            that.moveLeft(that, resultObj.dxRem);
-        } else if (resultObj.direction === 4) {
-            that.moveRight(that, resultObj.dxRem);
         }
         
       }, false);
@@ -338,7 +362,13 @@ ClassicGame.prototype.init = function() {
 }
 
 ClassicGame.prototype.initGrids = function() {
-    for(var i = 0; i < 19; i++) {
+    // 显示分数
+    var scoreWrap = document.getElementsByClassName('score-wrap');
+    scoreWrap[0].style.display = 'block';
+    var score = document.getElementsByClassName('score');
+    score[0].innerHTML = "0";
+
+    for(var i = 0; i < 22; i++) {
 		for(var j = 0; j < 15; j++) {
             var grid = document.createElement("div");
             grid.style.cssText = "top:"+i+"rem;left:"+j+"rem;";
@@ -375,7 +405,7 @@ ClassicGame.prototype.initNext = function() {
         var next = document.createElement("div");
         var top = this.tetris[this.r3][this.r4][i][1] + 2.5;
         var left = this.tetris[this.r3][this.r4][i][0] - 4;
-        next.style.cssText = "top:"+top+"rem;left:"+left+"rem;background:"+this.colors[this.r5];
+        next.style.cssText = "top:"+top/2+"rem;left:"+left/2+"rem;background:"+this.colors[this.r5];
         next.className = 'block';
         next.setAttribute("next","true");
         document.getElementsByClassName('next-warp')[0].appendChild(next);
@@ -383,22 +413,22 @@ ClassicGame.prototype.initNext = function() {
 }
 
 ClassicGame.prototype.bindEvents = function() {
-    var btnLeft = document.getElementsByClassName('btn-left')[0];
-    var btnRight = document.getElementsByClassName('btn-right')[0];
-    var btnUp = document.getElementsByClassName('btn-up')[0];
-    var btnDown = document.getElementsByClassName('btn-down')[0];
+    // var btnLeft = document.getElementsByClassName('btn-left')[0];
+    // var btnRight = document.getElementsByClassName('btn-right')[0];
+    // var btnUp = document.getElementsByClassName('btn-up')[0];
+    // var btnDown = document.getElementsByClassName('btn-down')[0];
 
     var that = this;
 
-    btnLeft.onclick = function() {
-        that.moveLeft(that);
-    }
-    btnRight.onclick = function() {
-        that.moveRight(that);
-    }
-    btnUp.onclick = function() {
-        that.moveRotate(that);
-    }
+    // btnLeft.onclick = function() {
+    //     that.moveLeft(that);
+    // }
+    // btnRight.onclick = function() {
+    //     that.moveRight(that);
+    // }
+    // btnUp.onclick = function() {
+    //     that.moveRotate(that);
+    // }
 
     $(".btn-down").on({
         touchstart: function(e) {
@@ -506,7 +536,7 @@ ClassicGame.prototype.canMoveRotate = function(i) {
     var left = this.tetris[this.r1][this.r2][i][0];
     var blockPosition = top+'rem'+left+'rem';
 
-    if (left>= 0 && left<= 14 && top <= 18) {
+    if (left>= 0 && left<= 14 && top <= 21) {
         if(this.blockArea.indexOf(blockPosition) == -1) {
             return true;
         } else {
@@ -542,7 +572,7 @@ ClassicGame.prototype.canMoveDown = function(i, y) {
     var left = this.tetris[this.r1][this.r2][i][0];
     var blockPosition = top+'rem'+left+'rem';
 
-    if (top <= 18) {
+    if (top <= 21) {
         if(this.blockArea.indexOf(blockPosition) == -1) {
             return true;
         } else {
@@ -569,8 +599,6 @@ ClassicGame.prototype.autoMove = function() {
                 var canM3 = that.canMoveDown(3, 1);
     
                 if (that.gameover == true) {
-                    // todo
-                    alert('Game Over!');
                     var grids = document.getElementsByClassName('grid');
                     for(var i = grids.length - 1; i >= 0; i--) { 
                         grids[i].parentNode.removeChild(grids[i]); 
@@ -585,6 +613,9 @@ ClassicGame.prototype.autoMove = function() {
 
                     // todo 生成图片
                     that.drawImg();
+
+                    var scoreWrap = document.getElementsByClassName('score-wrap');
+                    scoreWrap[0].style.display = 'none';
                     
                 } else if (canM0 && canM1 && canM2 && canM3) {
                     that.y += 1;
@@ -947,14 +978,14 @@ ClassicGame.prototype.drawImg = function() {
     loadImg([
         'http://h0.hucdn.com/open/201846/021b246efa45ab41_470x478.png',
     ]).then(([img1])=> {
-        ctx.drawImage(img1, 250, 630, 200, 200); 
+        ctx.drawImage(img1, 200, 560, 300, 300); 
         ctx.fillStyle = '#000'; 
-        ctx.font="30px 宋体";     
+        ctx.font="40px 黑体";     
         ctx.textAlign="center";
-        ctx.fillText('分数', 300, 250);
-        ctx.fillText(that.score, 400, 250);
-        ctx.fillText('分享给好友，一起PK吧', 350, 400);
-        ctx.fillText('长按保存', 350, 600);
+        ctx.fillText('分数', 300, 200);
+        ctx.fillText(that.score, 400, 200);
+        ctx.fillText('分享给好友，一起PK吧', 350, 300);
+        ctx.fillText('长按保存', 350, 500);
         var imageURL = canvas.toDataURL("image/png"); 
         var img3 = new Image();
         document.body.append(img3);
