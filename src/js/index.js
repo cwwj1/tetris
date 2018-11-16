@@ -6,41 +6,6 @@ document.body.addEventListener('touchmove',function(e){
     e.preventDefault()
   },{ passive:false })
 
-function GetSlideAngle(dx, dy) { 
-    return Math.atan2(dy, dx) * 180 / Math.PI; 
-} 
-
-//根据起点和终点返回方向 1：向上，2：向下，3：向左，4：向右,0：未滑动 
-function GetSlideDirection(startX, startY, endX, endY) { 
-  var dy = endY - startY; 
-  var dx = endX - startX;
-  var dyRem = Math.floor(dy/46.875);
-  var dxRem = Math.floor(dx/46.875);
-
-  var resultObj = {
-    direction: 0,
-    dyRem: dyRem,
-    dxRem: dxRem
-  };
-  //如果滑动距离太短 
-  if(Math.abs(dx) < 2 && Math.abs(dy) < 2) { 
-      return resultObj; 
-  } 
-  var angle = GetSlideAngle(dx, dy); 
-  if(angle >= -45 && angle < 45) { 
-    resultObj.direction = 4; 
-  }else if (angle >= 45 && angle < 135) { 
-    resultObj.direction = 1; 
-  }else if (angle >= -135 && angle < -45) { 
-    resultObj.direction = 2; 
-  } 
-  else if ((angle >= 135 && angle <= 180) || (angle >= -180 && angle < -135)) { 
-    resultObj.direction = 3; 
-  } 
-  return resultObj; 
-} 
-
-
 var classicBtn = document.getElementsByClassName('classic-model')[0];
 var puzzlesBtn = document.getElementsByClassName('puzzles-model')[0];
 
@@ -48,11 +13,6 @@ classicBtn.addEventListener('click', function(){
     document.getElementsByClassName('index-wrap')[0].style.display="none";
     new ClassicGame();
 })
-
-// puzzlesBtn.addEventListener('click', function(){
-//     document.getElementsByClassName('index-wrap').style.display="none";
-//     alert('暂未开放==！');
-// })
 
 var Util = {
     getElementByAttr: function(className,attr,value) {
@@ -64,7 +24,42 @@ var Util = {
                 aEle.push( aElements[i] );
         }
         return aEle;
-    }
+    },
+
+    getSlideAngle: function(dx, dy) {
+        return Math.atan2(dy, dx) * 180 / Math.PI; 
+    },
+
+    // 根据起点和终点返回方向 1：向上，2：向下，3：向左，4：向右,0：未滑动
+    getSlideDirection: function(startX, startY, endX, endY) {
+        console.log(11);
+        var dy = endY - startY; 
+        var dx = endX - startX;
+        var dyRem = Math.floor(dy/46.875);
+        var dxRem = Math.floor(dx/46.875);
+
+        var resultObj = {
+            direction: 0,
+            dyRem: dyRem,
+            dxRem: dxRem
+        };
+        //如果滑动距离太短 
+        if(Math.abs(dx) < 2 && Math.abs(dy) < 2) { 
+            return resultObj; 
+        } 
+        var angle = Util.getSlideAngle(dx, dy); 
+        if(angle >= -45 && angle < 45) { 
+            resultObj.direction = 4; 
+        }else if (angle >= 45 && angle < 135) { 
+            resultObj.direction = 1; 
+        }else if (angle >= -135 && angle < -45) { 
+            resultObj.direction = 2; 
+        } 
+        else if ((angle >= 135 && angle <= 180) || (angle >= -180 && angle < -135)) { 
+            resultObj.direction = 3; 
+        } 
+        return resultObj; 
+    },
 };
 
 // 经典模式
@@ -271,19 +266,16 @@ function ClassicGame () {
     ];
     // 随机颜色
     this.colors = ['#037ef3', '#f85a40', '#30c39e', '#a51890', '#f48924', '#ffc845'];
+    this.isDown = '';
 
     
     // 显示游戏区域所有网格
     this.initGrids();
     // 随机数
     this.initRandom();
-    // 绑定按钮及按键事件
-    // this.bindEvents();
 
-    // 掉落
-    // this.autoMove();
     var that = this;
-    that.isDown = '';
+    
     function go() {
         that.init();
 		that.bindEvents();
@@ -297,7 +289,6 @@ function ClassicGame () {
 		})
 	}
     go();
-    console.log('isDown', that.isDown);
     
     //滑动处理 
     var startX, startY; 
@@ -314,10 +305,9 @@ function ClassicGame () {
         var dx = (endX - startX) / 46.875;
         var dxRem = Math.floor(dx);
         
-        var resultObj = GetSlideDirection(startX, startY, endX, endY); 
+        var resultObj = Util.getSlideDirection(startX, startY, endX, endY); 
         
         if (Math.abs(dxRem) >= 1) {
-            
             if (resultObj.direction === 3) {
                 startX = endX;
                 that.moveLeft(that, dxRem);
@@ -337,7 +327,7 @@ function ClassicGame () {
         var endX, endY; 
         endX = ev.changedTouches[0].pageX; 
         endY = ev.changedTouches[0].pageY;
-        var resultObj = GetSlideDirection(startX, startY, endX, endY); 
+        var resultObj = Util.getSlideDirection(startX, startY, endX, endY); 
 
         if (resultObj.direction === 1 && resultObj.dyRem > 5) {
             that.moveDownFaster(that, 'touch');
@@ -349,11 +339,6 @@ function ClassicGame () {
 }
 
 ClassicGame.prototype.init = function() {
-    // 显示游戏区域所有网格
-    // this.initGrids();
-    // 随机数
-    // this.initRandom();
-
     // 根据随机数产生掉落的方块
     this.initBlock();
     // 根据随机数产生预览的方块
@@ -611,7 +596,7 @@ ClassicGame.prototype.autoMove = function() {
                     score.innerHTML = "0";
                     document.getElementsByClassName('index-wrap')[0].style.display="flex";
 
-                    // todo 生成图片
+                    // 生成图片
                     that.drawImg();
 
                     var scoreWrap = document.getElementsByClassName('score-wrap');
@@ -652,7 +637,6 @@ ClassicGame.prototype.autoMove = function() {
 }
 
 ClassicGame.prototype.moveDownFaster = function(that, type) {
-    // todo
     that.speed = 50;
     if (type == 'touch') {
         $.when(that.isDown).then(function() {
